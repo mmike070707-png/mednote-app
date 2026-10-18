@@ -1,276 +1,109 @@
-cat << 'EOF' > ~/mednote/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0284c7" />
-  <meta name="description" content="MedNote - High-Precision Clinical Shorthand Expansion, Shared Team Communication, and Training Hub." />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="MedNote" />
-  
-  <title>MedNote - Clinical Portal & Shorthand Hub</title>
-  
-  <link rel="manifest" id="manifest-placeholder" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedNote Clinical Hub</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      touch-action: manipulation;
-    }
-    .font-mono-code {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: #f8fafc;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-    .sanitized-grid {
-      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-      background-size: 28px 28px;
-    }
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.96); }
-    }
-    .pulse-live {
-      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pulse-live { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   </style>
 </head>
-<body class="bg-slate-100/70 text-slate-800 min-h-screen flex flex-col antialiased select-none sanitized-grid">
-
-  <div id="app" class="flex-grow flex flex-col min-h-screen"></div>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+  <div id="app" class="flex flex-col min-h-screen"></div>
 
   <script>
-    const manifestData = {
-      "name": "MedNote Clinical Hub",
-      "short_name": "MedNote",
-      "description": "Clinical Shorthand Expansion & Team Communication App",
-      "start_url": "/",
-      "display": "standalone",
-      "background_color": "#f8fafc",
-      "theme_color": "#0284c7",
-      "icons": [
-        {
-          "src": "https://cdn-icons-png.flaticon.com/512/3063/3063176.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    };
-    const stringManifest = JSON.stringify(manifestData);
-    const blobManifest = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blobManifest);
-    document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
-
     const DEFAULT_DICT = {
       "pt": "patient",
-      "htn": "hypertension",
-      "dm2": "type 2 diabetes mellitus",
-      "dm1": "type 1 diabetes mellitus",
       "sob": "shortness of breath",
-      "po": "orally (by mouth)",
-      "bid": "twice a day",
-      "tid": "three times a day",
-      "qid": "four times a day",
-      "qd": "once daily",
-      "prn": "as needed",
-      "ekg": "electrocardiogram",
+      "htn": "hypertension",
       "chf": "congestive heart failure",
       "copd": "chronic obstructive pulmonary disease",
       "rx": "prescription",
-      "dx": "diagnosis",
-      "hx": "history",
-      "tx": "treatment",
+      "po": "orally (by mouth)",
+      "bid": "twice a day",
+      "dm2": "type 2 diabetes mellitus",
       "stat": "immediately",
+      "prn": "as needed",
+      "ekg": "electrocardiogram",
       "bp": "blood pressure",
-      "hr": "heart rate",
-      "icu": "intensive care unit",
+      "hx": "history of",
       "er": "emergency room",
       "iv": "intravenous",
-      "npo": "nothing by mouth"
+      "ot": "occupational therapy",
+      "rom": "range of motion",
+      "ga": "gestational age",
+      "tx": "treatment"
     };
 
-    let state = {
-      currentUser: null,
-      activeTab: 'workspace',
-      dictionary: { ...DEFAULT_DICT },
-      notesHistory: [
-        { id: 1, original: "72yo pt presenting to ER w/ sob, htn, and hx of chf. Start IV prn.", expanded: "72yo patient presenting to emergency room w/ shortness of breath, hypertension, and history of congestive heart failure. Start intravenous as needed.", timestamp: "10:15 AM", author: "Dr. Alex Vance", status: "Verified" },
-        { id: 2, original: "Administer rx po bid for dm2. Monitor bp stat.", expanded: "Administer prescription orally (by mouth) twice a day for type 2 diabetes mellitus. Monitor blood pressure immediately.", timestamp: "11:30 AM", author: "Nurse Sarah Jenkins", status: "Logged" }
-      ],
-      chatMessages: [
-        {
-          id: 101,
-          author: "Dr. Eleanor Vance",
-          role: "Director of Emergency Medicine",
-          text: "Attention team: 72yo pt in Bed 4 presenting w/ severe sob & htn. Please run ekg stat.",
-          timestamp: "12:04 PM",
-          badge: "MD"
-        },
-        {
-          id: 102,
-          author: "Sam Martinez",
-          role: "Charge Nurse",
-          text: "Copy Dr. Vance. Starting IV and administering rx po bid prn. Will monitor bp closely.",
-          timestamp: "12:07 PM",
-          badge: "RN"
-        }
-      ],
-      tutorialStep: 0,
-      copiedTooltip: false
-    };
-
-    const TUTORIAL_STEPS = [
-      {
-        title: "Welcome to MedNote Clinical Hub",
-        description: "Engineered for high-volume clinical workflows. MedNote instantly expands standardized clinical shorthand into clear, unambiguous, HIPAA-compliant notes.",
-        instruction: "Click 'Next Step' below to learn how to navigate the workspace."
-      },
-      {
-        title: "1. Instant Expansion Workspace",
-        description: "Input shorthand tokens directly into the expansion desk. Try pasting: <code class='bg-sky-100 text-sky-900 border border-sky-200 px-2 py-0.5 rounded font-mono text-xs'>pt with htn and dm2 presenting w/ sob</code>",
-        instruction: "Click 'Expand Note' to test real-time shorthand translation."
-      },
-      {
-        title: "2. Real-Time Team Channel",
-        description: "Communicate with ward staff using built-in clinical auto-translation to eliminate misinterpretation during critical handoffs.",
-        instruction: "Switch tabs via the top header bar to test the live team stream."
-      },
-      {
-        title: "Ready to Start!",
-        description: "You're set to process high-speed, zero-error medical documentation.",
-        instruction: "Click 'Launch Workspace' to begin recording notes."
-      }
+    const WINGS = [
+      { id: 'er', name: 'Emergency Room', icon: 'fa-truck-medical' },
+      { id: 'icu', name: 'ICU Ward', icon: 'fa-heart-pulse' },
+      { id: 'rehab', name: 'Rehabilitation', icon: 'fa-person-walking-with-cane' },
+      { id: 'hospice', name: 'Hospice & Palliative', icon: 'fa-hands-holding-child' },
+      { id: 'nursery', name: 'Neonatal Nursery', icon: 'fa-baby' }
     ];
 
-    function expandText(text) {
-      if (!text) return "";
-      let words = text.split(/\b/);
-      return words.map(w => {
-        let clean = w.toLowerCase().trim();
-        if (state.dictionary[clean]) {
-          let match = state.dictionary[clean];
-          if (w[0] === w[0].toUpperCase() && w[0] !== w[0].toLowerCase()) {
-            return match.charAt(0).toUpperCase() + match.slice(1);
-          }
-          return match;
+    let state = {
+      currentUser: { name: "Dr. Eleanor Vance", title: "Director of Emergency Medicine", facility: "St. Jude Medical Center", role: "admin" },
+      activeTab: 'workspace',
+      currentWing: WINGS[0],
+      currentInput: '',
+      dictionary: { ...DEFAULT_DICT },
+      notesHistory: {
+        er: [
+          { id: 1, original: "72yo pt presenting to er w/ sob, htn, and hx of chf. Start iv prn.", expanded: "72yo patient presenting to emergency room w/ shortness of breath, hypertension, and history of congestive heart failure. Start intravenous as needed.", timestamp: "10:15 AM", author: "Dr. Eleanor Vance", status: "Verified" },
+          { id: 2, original: "Administer rx po bid for dm2. Monitor bp stat.", expanded: "Administer prescription orally (by mouth) twice a day for type 2 diabetes mellitus. Monitor blood pressure immediately.", timestamp: "11:30 AM", author: "Nurse Sarah Jenkins", status: "Logged" }
+        ],
+        icu: [],
+        rehab: [],
+        hospice: [],
+        nursery: []
+      },
+      chatMessages: {
+        er: [
+          { id: 101, author: "Dr. Eleanor Vance", badge: "Lead MD", text: "Attention team: 72yo pt in Bed 4 presenting w/ severe sob & htn. Please run ekg stat.", timestamp: "12:04 PM" },
+          { id: 102, author: "Sam Martinez", badge: "Lead RN", text: "Copy Dr. Vance. Starting iv and administering rx po bid prn. Will monitor bp closely.", timestamp: "12:07 PM" }
+        ],
+        icu: [],
+        rehab: [],
+        hospice: [],
+        nursery: []
+      },
+      triageInbox: [
+        {
+          id: 'TR-8901',
+          callerName: "Martha Jenkins",
+          callerPhone: "+1 (555) 234-8901",
+          callerDOB: "04/12/1958",
+          timestamp: "10:42 AM Today",
+          symptoms: "Sneezing, itchy watery eyes, nasal congestion for 3 days. No fever, no shortness of breath.",
+          aiMiniDiagnosis: "Seasonal Allergic Rhinitis (Mild)",
+          aiRecommendation: "Recommend OTC antihistamine (e.g., Cetirizine 10mg daily), hydration, and environmental allergen avoidance. Follow up if symptoms persist > 7 days.",
+          physicianTarget: "Dr. Eleanor Vance",
+          status: "Pending Review"
         }
-        return w;
-      }).join("");
-    }
+      ],
+      simulatingCall: false
+    };
 
-    function render() {
-      const appEl = document.getElementById("app");
-      
-      if (!state.currentUser) {
-        appEl.innerHTML = renderLoginScreen();
-        attachLoginEvents();
-        return;
-      }
-
-      appEl.innerHTML = `
-        ${renderHeader()}
-        <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col">
-          ${renderTabContent()}
-        </main>
-        ${renderFooter()}
-      `;
-
-      attachGlobalEvents();
-    }
-
-    function renderLoginScreen() {
-      return `
-        <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 flex items-center justify-center p-4 sm:p-6">
-          <div class="max-w-md w-full glass-card rounded-3xl shadow-2xl border border-white/20 overflow-hidden relative">
-            <div class="h-2 bg-gradient-to-r from-sky-500 via-teal-400 to-emerald-400"></div>
-            
-            <div class="p-8">
-              <div class="flex flex-col items-center text-center mb-8">
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 mb-4 ring-8 ring-sky-50/50">
-                  <i class="fa-solid fa-staff-snake text-3xl"></i>
-                </div>
-                <div class="inline-flex items-center space-x-2 bg-sky-50 border border-sky-200/80 px-3 py-1 rounded-full text-xs font-semibold text-sky-800 mb-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-live"></span>
-                  <span>System Active • HD Grade v2.6</span>
-                </div>
-                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">MedNote Portal</h1>
-                <p class="text-slate-500 text-xs mt-1">High-Precision Clinical Documentation Hub</p>
-              </div>
-
-              <div class="space-y-3.5">
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Select Login Profile</label>
-                
-                <button id="btn-login-admin" class="w-full text-left p-4 rounded-2xl border border-slate-200 bg-white/90 hover:border-sky-500 hover:bg-sky-50/60 transition-all duration-200 flex items-center justify-between group shadow-sm hover:shadow-md active:scale-[0.99]">
-                  <div class="flex items-center space-x-4">
-                    <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-lg group-hover:bg-sky-600 group-hover:text-white transition-colors duration-200">
-                      <i class="fa-solid fa-user-doctor"></i>
-                    </div>
-                    <div>
-                      <div class="font-bold text-slate-800 text-sm">Attending Physician / Director</div>
-                      <div class="text-xs text-slate-500">Dictionary management & full system access</div>
-                    </div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-sky-600 group-hover:translate-x-1 transition-all"></i>
-                </button>
-
-                <button id="btn-login-worker" class="w-full text-left p-4 rounded-2xl border border-slate-200 bg-white/90 hover:border-teal-500 hover:bg-teal-50/60 transition-all duration-200 flex items-center justify-between group shadow-sm hover:shadow-md active:scale-[0.99]">
-                  <div class="flex items-center space-x-4">
-                    <div class="w-11 h-11 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-lg group-hover:bg-teal-600 group-hover:text-white transition-colors duration-200">
-                      <i class="fa-solid fa-user-nurse"></i>
-                    </div>
-                    <div>
-                      <div class="font-bold text-slate-800 text-sm">Clinical Practitioner (RN)</div>
-                      <div class="text-xs text-slate-500">Shorthand expansion & team live channel</div>
-                    </div>
-                  </div>
-                  <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-teal-600 group-hover:translate-x-1 transition-all"></i>
-                </button>
-              </div>
-
-              <div class="mt-8 pt-6 border-t border-slate-200/60 text-center">
-                <p class="text-[11px] text-slate-400 flex items-center justify-center space-x-1.5">
-                  <i class="fa-solid fa-shield-halved text-emerald-500"></i>
-                  <span>256-Bit Encrypted Clinical Session</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function attachLoginEvents() {
-      document.getElementById("btn-login-admin")?.addEventListener("click", () => {
-        state.currentUser = { name: "Dr. Eleanor Vance", role: "admin", title: "Director of Emergency Medicine", facility: "Metro General Hospital" };
-        render();
-      });
-
-      document.getElementById("btn-login-worker")?.addEventListener("click", () => {
-        state.currentUser = { name: "Sam Martinez", role: "employee", title: "Charge Nurse (RN)", facility: "Metro General Hospital • Ward 4" };
-        render();
+    function expandText(text) {
+      if (!text) return '';
+      return text.replace(/\b[A-Za-z0-9_]+\b/g, (match) => {
+        const lower = match.toLowerCase();
+        if (state.dictionary[lower]) {
+          const replacement = state.dictionary[lower];
+          if (match[0] === match[0].toUpperCase()) {
+            return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+          }
+          return replacement;
+        }
+        return match;
       });
     }
 
@@ -291,29 +124,43 @@ cat << 'EOF' > ~/mednote/index.html
               </div>
             </div>
 
-            <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-100/90 p-1 rounded-xl border border-slate-200/70">
-              <button onclick="switchTab('workspace')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'workspace' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
+            <div class="hidden lg:flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/70">
+              ${WINGS.map(w => `
+                <button onclick="switchWing('${w.id}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition ${state.currentWing.id === w.id ? 'bg-white text-sky-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}">
+                  <i class="fa-solid ${w.icon} mr-1"></i>${w.name}
+                </button>
+              `).join('')}
+            </div>
+
+            <nav class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200/70">
+              <button onclick="switchTab('workspace')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'workspace' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
                 <span class="hidden md:inline">Workspace</span>
               </button>
               
-              <button onclick="switchTab('teamchat')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'teamchat' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
+              <button onclick="switchTab('teletriage')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'teletriage' ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
+                <i class="fa-solid fa-phone-volume text-xs text-emerald-600"></i>
+                <span class="hidden md:inline">AI Tele-Triage</span>
+                ${state.triageInbox.filter(i => i.status === 'Pending Review').length > 0 ? `<span class="ml-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">${state.triageInbox.filter(i => i.status === 'Pending Review').length}</span>` : ''}
+              </button>
+
+              <button onclick="switchTab('teamchat')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'teamchat' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
                 <i class="fa-solid fa-comments text-xs"></i>
                 <span class="hidden md:inline">Team Channel</span>
               </button>
 
-              <button onclick="switchTab('dictionary')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'dictionary' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
+              <button onclick="switchTab('dictionary')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'dictionary' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
                 <i class="fa-solid fa-book-medical text-xs"></i>
                 <span class="hidden md:inline">Dictionary</span>
               </button>
 
-              <button onclick="switchTab('tutorial')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'tutorial' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
+              <button onclick="switchTab('tutorial')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'tutorial' ? 'bg-white text-sky-700 shadow-sm border border-slate-200/60' : 'text-slate-600 hover:text-slate-900'}">
                 <i class="fa-solid fa-graduation-cap text-xs"></i>
                 <span class="hidden md:inline">Tutorial</span>
               </button>
 
               ${state.currentUser.role === 'admin' ? `
-                <button onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-600 hover:bg-indigo-50'}">
+                <button onclick="switchTab('admin')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-1.5 ${state.activeTab === 'admin' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-600 hover:bg-indigo-50'}">
                   <i class="fa-solid fa-sliders text-xs"></i>
                   <span class="hidden md:inline">Admin</span>
                 </button>
@@ -334,94 +181,88 @@ cat << 'EOF' > ~/mednote/index.html
       `;
     }
 
-    function renderTabContent() {
-      switch (state.activeTab) {
-        case 'teamchat': return renderTeamChatTab();
-        case 'tutorial': return renderTutorialTab();
-        case 'dictionary': return renderDictionaryTab();
-        case 'admin': return renderAdminTab();
-        case 'workspace':
-        default: return renderWorkspaceTab();
-      }
-    }
-
     function renderWorkspaceTab() {
+      const liveExpansion = expandText(state.currentInput);
+      const wingNotes = state.notesHistory[state.currentWing.id] || [];
+
       return `
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
           <div class="lg:col-span-2 space-y-6 flex flex-col">
-            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex-grow flex flex-col">
-              <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex items-center justify-between">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-grow flex flex-col">
+              <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                   <span class="w-3 h-3 rounded-full bg-sky-500"></span>
-                  <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Live Note Expansion Desk</h2>
+                  <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide">${state.currentWing.name} Note Expansion Desk</h2>
                 </div>
-                <span class="text-xs text-slate-400 font-mono">Auto-Format Active</span>
+                <span class="text-xs text-slate-400">Real-time Shorthand Translation Active</span>
               </div>
 
               <div class="p-6 flex-grow flex flex-col space-y-6">
                 <form id="note-form" class="flex flex-col flex-grow space-y-4">
                   <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                      Clinical Shorthand Input
-                    </label>
-                    <textarea id="note-input" rows="5" 
-                      placeholder="e.g. 68yo male pt presented with sob and htn. Administer rx po bid prn..."
-                      class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-800 text-sm font-mono-code transition duration-200 outline-none resize-none shadow-inner"
-                    ></textarea>
+                    <div class="flex items-center justify-between mb-2">
+                      <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Clinical Shorthand Input
+                      </label>
+                      <button type="button" onclick="loadSampleText()" class="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center space-x-1">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>Load ${state.currentWing.id.toUpperCase()} Sample</span>
+                      </button>
+                    </div>
+                    <textarea id="note-input" rows="5" oninput="handleInput(this.value)" placeholder="Type clinical shorthand here... (e.g. pt presenting w/ sob, htn, dm2. Administer rx po bid prn)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-800 text-sm transition outline-none resize-none shadow-inner">${state.currentInput}</textarea>
                   </div>
 
-                  <div class="flex items-center justify-between pt-2">
-                    <div class="flex items-center space-x-2 text-xs text-slate-400">
-                      <i class="fa-solid fa-circle-info text-sky-500"></i>
-                      <span>Tokens automatically convert to standardized full text</span>
-                    </div>
-                    <button type="submit" class="bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-700 hover:to-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-sky-600/20 active:scale-95 transition duration-150 flex items-center space-x-2">
-                      <i class="fa-solid fa-wand-magic-sparkles"></i>
-                      <span>Expand Note</span>
+                  <div class="flex items-center justify-between pt-1">
+                    <span class="text-xs text-slate-400">
+                      Shorthand terms automatically expand in standard medical prose below
+                    </span>
+                    <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md active:scale-95 transition flex items-center space-x-2">
+                      <i class="fa-solid fa-check"></i>
+                      <span>Save Note to ${state.currentWing.id.toUpperCase()} Log</span>
                     </button>
                   </div>
                 </form>
 
                 <div class="pt-4 border-t border-slate-100">
                   <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Expanded Clinical Standard Text</h3>
-                    <button id="copy-result-btn" class="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center space-x-1 px-2.5 py-1 bg-sky-50 rounded-lg hover:bg-sky-100 transition">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Standardized Expanded Text</h3>
+                    <button id="copy-result-btn" onclick="copyResultText()" class="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center space-x-1 px-3 py-1 bg-sky-50 rounded-lg hover:bg-sky-100 transition">
                       <i class="fa-regular fa-copy"></i>
-                      <span>Copy Result</span>
+                      <span id="copy-text-label">Copy Result</span>
                     </button>
                   </div>
-                  <div id="expanded-result" class="p-4 bg-sky-50/40 rounded-xl border border-sky-100 min-h-[100px] text-sm text-slate-800 leading-relaxed font-sans">
-                    <span class="text-slate-400 italic">Expanded full text will appear here immediately after processing...</span>
+                  <div id="expanded-result" class="p-4 bg-sky-50/50 rounded-xl border border-sky-100 min-h-[110px] text-sm text-slate-800 leading-relaxed font-sans">
+                    ${liveExpansion || '<span class="text-slate-400 italic">Expanded full clinical text will appear here in real time...</span>'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center space-x-2">
+              <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center space-x-2">
                 <i class="fa-solid fa-clock-rotate-left text-sky-600"></i>
-                <span>Recent Note Logs</span>
+                <span>${state.currentWing.name} History</span>
               </h3>
-              <span class="text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">${state.notesHistory.length} Recorded</span>
+              <span class="text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">${wingNotes.length} Saved</span>
             </div>
 
             <div class="space-y-3 overflow-y-auto max-h-[500px] custom-scrollbar pr-1 flex-grow">
-              ${state.notesHistory.map(note => `
-                <div class="p-4 bg-slate-50 hover:bg-sky-50/30 rounded-xl border border-slate-200/80 transition duration-150 space-y-2">
+              ${wingNotes.length === 0 ? `<p class="text-xs text-slate-400 italic text-center py-8">No saved notes recorded for ${state.currentWing.name} yet.</p>` : wingNotes.map(note => `
+                <div class="p-4 bg-slate-50 hover:bg-sky-50/30 rounded-xl border border-slate-200/80 transition space-y-2">
                   <div class="flex items-center justify-between text-[11px]">
                     <span class="font-bold text-slate-700">${note.author}</span>
-                    <span class="text-slate-400 font-mono">${note.timestamp || 'Just Now'}</span>
+                    <span class="text-slate-400">${note.timestamp || 'Just Now'}</span>
                   </div>
-                  <p class="text-xs text-slate-700 leading-relaxed font-normal">${note.expanded}</p>
-                  <div class="flex items-center justify-between pt-1 border-t border-slate-200/40 text-[10px]">
-                    <span class="inline-flex items-center space-x-1 text-emerald-600 font-medium">
-                      <i class="fa-solid fa-check-double"></i>
-                      <span>${note.status || 'Verified'}</span>
+                  <p class="text-xs text-slate-700 leading-relaxed">${note.expanded}</p>
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-200/50 text-[10px]">
+                    <span class="inline-flex items-center space-x-1 text-emerald-600 font-semibold">
+                      <i class="fa-solid fa-check"></i>
+                      <span>Department Logged</span>
                     </span>
-                    <button onclick="copyToClipboard('${note.expanded.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-sky-600 font-medium">
-                      Copy
+                    <button onclick="copyToClipboard('${note.expanded.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-sky-600 font-semibold">
+                      Copy Text
                     </button>
                   </div>
                 </div>
@@ -432,28 +273,178 @@ cat << 'EOF' > ~/mednote/index.html
       `;
     }
 
+    function renderTeleTriageTab() {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+          <div class="lg:col-span-5 space-y-4 flex flex-col">
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden">
+              <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                <i class="fa-solid fa-headset text-9xl"></i>
+              </div>
+
+              <div class="flex items-center justify-between border-b border-slate-700/80 pb-4 mb-4">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                    <i class="fa-solid fa-phone-flip text-lg"></i>
+                  </div>
+                  <div>
+                    <h2 class="font-bold text-sm text-slate-100">AI Landline Receptionist</h2>
+                    <p class="text-[11px] text-emerald-400 flex items-center space-x-1">
+                      <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-live"></span>
+                      <span>Line Active • Tele-Triage Ready</span>
+                    </p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono bg-slate-800 px-2.5 py-1 rounded-full border border-slate-700 text-slate-300">SIP://ward4-reception</span>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                Simulate an incoming patient phone call. The AI Receptionist conducts a preliminary voice intake for cold/allergy symptoms, formulates health recommendations, and dispatches an inbox report to the attending physician.
+              </p>
+
+              <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60 space-y-3">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Simulate Incoming Patient Call</label>
+                
+                <div class="grid grid-cols-2 gap-2">
+                  <button onclick="triggerSimulatedCall('allergy')" class="p-3 bg-slate-700/60 hover:bg-slate-700 rounded-xl border border-slate-600/80 text-left transition group">
+                    <div class="text-xs font-bold text-emerald-300 group-hover:text-emerald-200">Preset A: Allergies</div>
+                    <div class="text-[10px] text-slate-400 truncate">Itchy eyes, sneezing, congestion</div>
+                  </button>
+                  <button onclick="triggerSimulatedCall('cold')" class="p-3 bg-slate-700/60 hover:bg-slate-700 rounded-xl border border-slate-600/80 text-left transition group">
+                    <div class="text-xs font-bold text-sky-300 group-hover:text-sky-200">Preset B: Common Cold</div>
+                    <div class="text-[10px] text-slate-400 truncate">Sore throat, mild fever, fatigue</div>
+                  </button>
+                </div>
+
+                <div class="pt-2">
+                  <label class="block text-[10px] text-slate-400 mb-1">Custom Symptom Description</label>
+                  <input id="custom-call-input" type="text" placeholder="e.g. Coughing, sinus pressure, low fever for 2 days..." 
+                    class="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                <button onclick="triggerCustomCall()" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
+                  <i class="fa-solid fa-phone"></i>
+                  <span>Dial In Landline Call</span>
+                </button>
+              </div>
+
+              ${state.simulatingCall ? `
+                <div class="mt-4 p-4 rounded-xl bg-slate-800 border border-emerald-500/40 text-xs space-y-2 animate-pulse">
+                  <div class="flex items-center justify-between text-emerald-400 font-bold">
+                    <span class="flex items-center space-x-2">
+                      <i class="fa-solid fa-headset"></i>
+                      <span>AI Receptionist Processing Call...</span>
+                    </span>
+                    <span class="font-mono text-[10px]">IN PROGRESS</span>
+                  </div>
+                  <p class="text-slate-300 text-[11px] italic font-mono">"Analyzing symptom severity & creating structured physician note..."</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-inbox text-lg"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-base font-bold text-slate-900">Physician Tele-Triage Inbox</h2>
+                    <p class="text-xs text-slate-400">Incoming landline AI mini-diagnoses & schedule requests</p>
+                  </div>
+                </div>
+                <span class="bg-sky-50 text-sky-700 font-bold border border-sky-200 text-xs px-3 py-1 rounded-full">
+                  ${state.triageInbox.length} Total Reports
+                </span>
+              </div>
+
+              <div class="space-y-4 mt-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+                ${state.triageInbox.length === 0 ? `
+                  <div class="text-center py-12 text-slate-400 space-y-2">
+                    <i class="fa-solid fa-envelope-open text-4xl text-slate-300"></i>
+                    <p class="text-xs font-semibold">No tele-triage calls recorded yet.</p>
+                    <p class="text-[11px] text-slate-400">Use the landline simulator on the left to dial in a test call.</p>
+                  </div>
+                ` : state.triageInbox.map(item => `
+                  <div class="p-5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3 relative hover:border-sky-300 transition">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full ${item.status === 'Pending Review' ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
+                        <span class="font-bold text-sm text-slate-900">${item.callerName}</span>
+                        <span class="text-xs text-slate-400">(${item.callerPhone})</span>
+                      </div>
+                      <span class="text-[10px] font-mono text-slate-400">${item.timestamp}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-white p-3 rounded-xl border border-slate-200/60">
+                      <div>
+                        <span class="font-bold text-slate-400 text-[10px] uppercase block mb-0.5">Assessed Symptoms</span>
+                        <p class="text-slate-800 leading-tight">${item.symptoms}</p>
+                      </div>
+                      <div>
+                        <span class="font-bold text-slate-400 text-[10px] uppercase block mb-0.5">AI Mini-Diagnosis</span>
+                        <p class="text-sky-700 font-bold leading-tight">${item.aiMiniDiagnosis}</p>
+                      </div>
+                    </div>
+
+                    <div class="text-xs bg-sky-50/60 p-3 rounded-xl border border-sky-100/80">
+                      <span class="font-bold text-sky-900 text-[10px] uppercase block mb-0.5">AI Triage Recommendation</span>
+                      <p class="text-sky-800 leading-relaxed">${item.aiRecommendation}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                      <div class="text-[11px] text-slate-500">
+                        Assigned To: <span class="font-semibold text-slate-800">${item.physicianTarget}</span>
+                      </div>
+                      
+                      ${item.status === 'Pending Review' ? `
+                        <div class="flex space-x-2">
+                          <button onclick="approveTriageAndEmail('${item.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs shadow-sm transition flex items-center space-x-1">
+                            <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                            <span>Confirm & Email Reply</span>
+                          </button>
+                        </div>
+                      ` : `
+                        <span class="text-emerald-600 font-bold text-[11px] flex items-center space-x-1">
+                          <i class="fa-solid fa-circle-check"></i>
+                          <span>Approved & Emailed Patient</span>
+                        </span>
+                      `}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function renderTeamChatTab() {
+      const messages = state.chatMessages[state.currentWing.id] || [];
       return `
         <div class="max-w-4xl mx-auto w-full flex-grow flex flex-col space-y-4">
-          <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold text-lg">
-                <i class="fa-solid fa-user-group"></i>
+                <i class="fa-solid ${state.currentWing.icon}"></i>
               </div>
               <div>
-                <h2 class="text-base font-bold text-slate-900">Ward 4 Emergency Communication Channel</h2>
-                <p class="text-xs text-slate-400">Encrypted clinical dialogue w/ auto-translation</p>
+                <h2 class="text-base font-bold text-slate-900">${state.currentWing.name} Channel</h2>
+                <p class="text-xs text-slate-400">Team communication with auto clinical translation</p>
               </div>
             </div>
             <div class="flex items-center space-x-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-live"></span>
-              <span class="text-xs font-semibold text-slate-600">4 Staff Active</span>
+              <span class="text-xs font-semibold text-slate-600">Department Channel Active</span>
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex-grow flex flex-col justify-between space-y-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex-grow flex flex-col justify-between space-y-4">
             <div id="chat-messages-container" class="space-y-4 max-h-[450px] overflow-y-auto custom-scrollbar pr-2 flex-grow">
-              ${state.chatMessages.map(msg => {
+              ${messages.length === 0 ? `<p class="text-xs text-slate-400 italic text-center py-12">No messages in ${state.currentWing.name} channel yet.</p>` : messages.map(msg => {
                 const isMe = msg.author === state.currentUser?.name;
                 const expanded = expandText(msg.text);
                 return `
@@ -463,13 +454,12 @@ cat << 'EOF' > ~/mednote/index.html
                       <span class="bg-slate-100 text-slate-600 font-semibold px-1.5 py-0.2 rounded text-[10px]">${msg.badge || 'Staff'}</span>
                       <span>• ${msg.timestamp}</span>
                     </div>
-                    
-                    <div class="max-w-lg rounded-2xl p-4 shadow-sm ${isMe ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200/60'}">
-                      <p class="font-mono-code text-xs font-medium">${msg.text}</p>
-                      
-                      <div class="mt-2 pt-2 ${isMe ? 'border-t border-sky-500/60 text-sky-100' : 'border-t border-slate-200 text-slate-600'} text-xs">
-                        <span class="font-semibold text-[10px] uppercase tracking-wider block opacity-75 mb-0.5">Expanded Translation:</span>
-                        <p class="font-sans leading-relaxed">${expanded}</p>
+
+                    <div class="max-w-lg rounded-2xl p-4 shadow-sm ${isMe ? 'bg-sky-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none border border-slate-200'}">
+                      <p class="text-xs font-medium">${msg.text}</p>
+                      <div class="mt-2 pt-2 ${isMe ? 'border-t border-sky-500 text-sky-100' : 'border-t border-slate-200 text-slate-600'} text-xs">
+                        <span class="font-semibold text-[10px] uppercase tracking-wider block opacity-75 mb-0.5">Expanded Note:</span>
+                        <p class="leading-relaxed">${expanded}</p>
                       </div>
                     </div>
                   </div>
@@ -478,9 +468,8 @@ cat << 'EOF' > ~/mednote/index.html
             </div>
 
             <form id="chat-form" class="pt-3 border-t border-slate-100 flex items-center space-x-3">
-              <input type="text" id="chat-input" placeholder="Type clinical shorthand (e.g. 72yo pt presenting w/ sob)..." required
-                class="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition" />
-              <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md shadow-sky-600/20 active:scale-95 transition flex items-center space-x-2">
+              <input type="text" id="chat-input" placeholder="Type shorthand update (e.g. pt presenting w/ sob, htn)..." required class="flex-grow p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition" />
+              <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md active:scale-95 transition flex items-center space-x-2">
                 <span>Send</span>
                 <i class="fa-solid fa-paper-plane text-xs"></i>
               </button>
@@ -490,63 +479,25 @@ cat << 'EOF' > ~/mednote/index.html
       `;
     }
 
-    function renderTutorialTab() {
-      const step = TUTORIAL_STEPS[state.tutorialStep];
-      return `
-        <div class="max-w-2xl mx-auto my-auto bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/90 shadow-xl text-center space-y-6">
-          <div class="w-20 h-20 bg-gradient-to-tr from-sky-500 to-teal-400 text-white rounded-3xl flex items-center justify-center mx-auto text-3xl font-bold shadow-lg shadow-sky-500/20 ring-8 ring-sky-50">
-            ${state.tutorialStep + 1}
-          </div>
-
-          <div class="space-y-2">
-            <h2 class="text-2xl font-extrabold text-slate-900">${step.title}</h2>
-            <p class="text-slate-600 text-sm leading-relaxed max-w-lg mx-auto">${step.description}</p>
-          </div>
-
-          <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-600 font-mono-code">
-            ${step.instruction}
-          </div>
-
-          <div class="flex items-center justify-between pt-6 border-t border-slate-100">
-            <button onclick="prevTutorialStep()" ${state.tutorialStep === 0 ? 'disabled class="opacity-40 cursor-not-allowed text-slate-400"' : 'class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700 transition"'}>
-              Previous
-            </button>
-            
-            <div class="flex space-x-1.5">
-              ${TUTORIAL_STEPS.map((_, idx) => `
-                <span class="w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === state.tutorialStep ? 'bg-sky-600 w-6' : 'bg-slate-200'}"></span>
-              `).join('')}
-            </div>
-
-            ${state.tutorialStep < TUTORIAL_STEPS.length - 1 
-              ? `<button onclick="nextTutorialStep()" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-md transition">Next Step</button>`
-              : `<button onclick="finishTutorial()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition">Launch Workspace</button>`
-            }
-          </div>
-        </div>
-      `;
-    }
-
     function renderDictionaryTab() {
       const keys = Object.keys(state.dictionary).sort();
       return `
-        <div class="max-w-5xl mx-auto w-full bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-6">
+        <div class="max-w-5xl mx-auto w-full bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
-              <h2 class="text-xl font-extrabold text-slate-900">Standardized Medical Shorthand Index</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Active facility-wide shorthand expansions (${keys.length} defined tokens)</p>
+              <h2 class="text-lg font-extrabold text-slate-900">Standardized Shorthand Index</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Active medical facility terms (${keys.length} defined abbreviations)</p>
             </div>
             <div class="relative">
               <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-xs text-slate-400"></i>
-              <input type="text" id="dict-search" placeholder="Filter terms..." onkeyup="filterDictionary(this.value)"
-                class="pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none w-full sm:w-64" />
+              <input type="text" id="dict-search" placeholder="Search terms..." onkeyup="filterDictionary(this.value)" class="pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none w-full sm:w-64" />
             </div>
           </div>
 
           <div id="dict-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[550px] overflow-y-auto custom-scrollbar pr-1">
             ${keys.map(k => `
-              <div class="dict-card p-3.5 bg-slate-50 hover:bg-sky-50/40 border border-slate-200/70 rounded-xl flex items-center justify-between transition">
-                <span class="font-mono-code font-bold text-sky-700 text-xs bg-sky-100/70 px-2 py-1 rounded border border-sky-200/60">${k}</span>
+              <div class="dict-card p-3.5 bg-slate-50 hover:bg-sky-50/50 border border-slate-200/80 rounded-xl flex items-center justify-between transition">
+                <span class="font-mono font-bold text-sky-700 text-xs bg-sky-100/80 px-2 py-1 rounded border border-sky-200">${k}</span>
                 <span class="text-xs text-slate-700 font-medium text-right capitalize">${state.dictionary[k]}</span>
               </div>
             `).join('')}
@@ -555,34 +506,63 @@ cat << 'EOF' > ~/mednote/index.html
       `;
     }
 
+    function renderTutorialTab() {
+      return `
+        <div class="max-w-4xl mx-auto w-full bg-white p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
+          <div class="border-b border-slate-100 pb-4">
+            <h2 class="text-xl font-bold text-slate-900">MedNote Interactive Training Guide</h2>
+            <p class="text-xs text-slate-500 mt-1">Learn how to maximize your medical clinical documentation and tele-triage workflow.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-5 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-2">
+              <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-sm">1</div>
+              <h3 class="font-bold text-sm text-slate-900">Real-Time Note Expansion</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">Type medical abbreviations in the Workspace. Words like "sob", "htn", and "prn" translate instantly into full medical terminology.</p>
+            </div>
+
+            <div class="p-5 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-2">
+              <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">2</div>
+              <h3 class="font-bold text-sm text-slate-900">AI Landline Tele-Triage</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">Simulate incoming patient calls for respiratory & seasonal issues. Review AI mini-diagnoses and dispatch one-click email reports.</p>
+            </div>
+
+            <div class="p-5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-2">
+              <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">3</div>
+              <h3 class="font-bold text-sm text-slate-900">Custom Medical Dictionary</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">Administrators can add custom hospital-specific shorthand terms through the Admin panel to expand system knowledge.</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function renderAdminTab() {
       return `
-        <div class="max-w-2xl mx-auto my-auto w-full bg-white p-8 rounded-3xl border border-slate-200/90 shadow-xl space-y-6">
+        <div class="max-w-xl mx-auto my-auto w-full bg-white p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
           <div class="flex items-center space-x-3 pb-4 border-b border-slate-100">
             <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xl">
               <i class="fa-solid fa-sliders"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-slate-900">Facility Terminology Administration</h2>
-              <p class="text-xs text-slate-500">Add or modify shorthand tokens across the organization</p>
+              <h2 class="text-base font-bold text-slate-900">Department Terms Admin</h2>
+              <p class="text-xs text-slate-500">Add or update clinical abbreviations across all wings</p>
             </div>
           </div>
 
           <form id="admin-add-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">New Abbreviation Token</label>
-              <input type="text" id="admin-key" placeholder="e.g. cap" required 
-                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Abbreviation Token</label>
+              <input type="text" id="admin-key" placeholder="e.g. cap" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Full Clinical Expansion</label>
-              <input type="text" id="admin-value" placeholder="e.g. community acquired pneumonia" required 
-                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none" />
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Full Standard Expansion</label>
+              <input type="text" id="admin-value" placeholder="e.g. community acquired pneumonia" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
 
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 active:scale-95 transition">
-              Commit Term to Facility Dictionary
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95 transition">
+              Add Term to Dictionary
             </button>
           </form>
         </div>
@@ -591,19 +571,141 @@ cat << 'EOF' > ~/mednote/index.html
 
     function renderFooter() {
       return `
-        <footer class="bg-white border-t border-slate-200/80 py-3 mt-auto">
+        <footer class="bg-white border-t border-slate-200 py-3 mt-auto">
           <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
             <div class="flex items-center space-x-2">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>MedNote Clinical Hub &copy; 2026 HIPAA Compliant Workspace</span>
+              <span>MedNote Clinical Hub • Active Wing: ${state.currentWing.name} © 2026</span>
             </div>
-            <div class="flex space-x-4">
-              <span>Security Standard: AES-256</span>
-              <span>Server: Local Ward 4 Node</span>
+            <div>
+              <span>Encrypted Departmental Session</span>
             </div>
           </div>
         </footer>
       `;
+    }
+
+    function renderTabContent() {
+      switch (state.activeTab) {
+        case 'teletriage': return renderTeleTriageTab();
+        case 'teamchat': return renderTeamChatTab();
+        case 'tutorial': return renderTutorialTab();
+        case 'dictionary': return renderDictionaryTab();
+        case 'admin': return renderAdminTab();
+        case 'workspace':
+        default: return renderWorkspaceTab();
+      }
+    }
+
+    function render() {
+      const app = document.getElementById("app");
+      if (!app) return;
+
+      app.innerHTML = `
+        ${renderHeader()}
+        <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-grow flex flex-col">
+          ${renderTabContent()}
+        </main>
+        ${renderFooter()}
+      `;
+
+      attachGlobalEvents();
+    }
+
+    function switchWing(wingId) {
+      const found = WINGS.find(w => w.id === wingId);
+      if (found) {
+        state.currentWing = found;
+        render();
+      }
+    }
+
+    function switchTab(t) {
+      state.activeTab = t;
+      render();
+    }
+
+    function handleInput(val) {
+      state.currentInput = val;
+      const resultEl = document.getElementById("expanded-result");
+      if (resultEl) {
+        const expanded = expandText(val);
+        resultEl.innerHTML = expanded || '<span class="text-slate-400 italic">Expanded full clinical text will appear here in real time...</span>';
+      }
+    }
+
+    function loadSampleText() {
+      const wingSamples = {
+        nursery: "Infant 34wk ga presenting w/ mild sob post delivery. Administer rx po bid prn.",
+        hospice: "Pt comfortable, continue palliative care protocol tx po bid prn. Monitor bp.",
+        rehab: "Pt completed 45min rom therapy. Schedule ot for tomorrow.",
+        icu: "Pt w/ severe copd and chf. Check ekg stat and start iv prn.",
+        er: "72yo pt presenting to er w/ sob, htn, dm2. Run ekg stat."
+      };
+      const sample = wingSamples[state.currentWing.id] || "72yo pt presenting w/ sob, htn, dm2. Start iv prn.";
+      state.currentInput = sample;
+      const inputEl = document.getElementById("note-input");
+      if (inputEl) inputEl.value = sample;
+      handleInput(sample);
+    }
+
+    function copyResultText() {
+      const text = expandText(state.currentInput);
+      if (text) {
+        copyToClipboard(text);
+      }
+    }
+
+    function triggerSimulatedCall(type) {
+      let symptoms = type === 'allergy' 
+        ? "Caller reports sneezing, clear nasal discharge, and watery eyes for 4 days. Unchanged indoors."
+        : "Caller reports sore throat, mild muscle aches, low-grade temperature (99.8F), and fatigue for 2 days.";
+      executeCallProcess("Caller (" + (type === 'allergy' ? "Allergy Intake" : "Cold Intake") + ")", symptoms);
+    }
+
+    function triggerCustomCall() {
+      const input = document.getElementById("custom-call-input")?.value.trim();
+      if (!input) return;
+      executeCallProcess("Caller (Custom Intake)", input);
+      if (document.getElementById("custom-call-input")) document.getElementById("custom-call-input").value = '';
+    }
+
+    function executeCallProcess(name, symptoms) {
+      state.simulatingCall = true;
+      render();
+
+      setTimeout(() => {
+        let isAllergy = symptoms.toLowerCase().includes("allergy") || symptoms.toLowerCase().includes("sneezing") || symptoms.toLowerCase().includes("itchy");
+        
+        let miniDiagnosis = isAllergy ? "Suspected Viral/Allergic Upper Respiratory Reaction" : "Mild Upper Respiratory Viral Infection (Common Cold)";
+        let recommendation = isAllergy 
+          ? "Maintain hydration, consider OTC daily oral antihistamines, and limit exposure to pollen/irritants. Schedule clinic visit if symptoms persist."
+          : "Increase fluid intake, rest, use OTC throat lozenges or acetaminophen as appropriate. Seek immediate care if high fever or breathing difficulty develops.";
+
+        state.triageInbox.unshift({
+          id: 'TR-' + Math.floor(1000 + Math.random() * 9000),
+          callerName: "Patient Intake (" + (Math.floor(Math.random()*800)+100) + ")",
+          callerPhone: "+1 (555) " + Math.floor(100 + Math.random() * 800) + "-" + Math.floor(1000 + Math.random() * 9000),
+          callerDOB: "11/20/1985",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          symptoms: symptoms,
+          aiMiniDiagnosis: miniDiagnosis,
+          aiRecommendation: recommendation,
+          physicianTarget: state.currentUser.name || "Dr. Eleanor Vance",
+          status: "Pending Review"
+        });
+
+        state.simulatingCall = false;
+        render();
+      }, 1200);
+    }
+
+    function approveTriageAndEmail(id) {
+      const item = state.triageInbox.find(i => i.id === id);
+      if (item) {
+        item.status = 'Approved & Emailed';
+        render();
+      }
     }
 
     function attachGlobalEvents() {
@@ -611,29 +713,22 @@ cat << 'EOF' > ~/mednote/index.html
       if (noteForm) {
         noteForm.addEventListener("submit", (e) => {
           e.preventDefault();
-          const input = document.getElementById("note-input").value.trim();
+          const input = state.currentInput.trim();
           if (!input) return;
 
           const expanded = expandText(input);
-          document.getElementById("expanded-result").innerText = expanded;
-          
-          state.notesHistory.unshift({
+          if (!state.notesHistory[state.currentWing.id]) {
+            state.notesHistory[state.currentWing.id] = [];
+          }
+          state.notesHistory[state.currentWing.id].unshift({
             id: Date.now(),
             author: state.currentUser.name,
             expanded,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: "Logged"
           });
-        });
-      }
-
-      const copyBtn = document.getElementById("copy-result-btn");
-      if (copyBtn) {
-        copyBtn.addEventListener("click", () => {
-          const text = document.getElementById("expanded-result").innerText;
-          if (text && !text.includes("Expanded full text will appear")) {
-            copyToClipboard(text);
-          }
+          state.currentInput = '';
+          render();
         });
       }
 
@@ -644,10 +739,14 @@ cat << 'EOF' > ~/mednote/index.html
           const chatInput = document.getElementById("chat-input").value.trim();
           if (!chatInput) return;
 
-          state.chatMessages.push({
+          if (!state.chatMessages[state.currentWing.id]) {
+            state.chatMessages[state.currentWing.id] = [];
+          }
+
+          state.chatMessages[state.currentWing.id].push({
             id: Date.now(),
             author: state.currentUser.name,
-            badge: state.currentUser.role === 'admin' ? 'MD' : 'RN',
+            badge: state.currentUser.role === 'admin' ? 'Lead MD' : 'Lead RN',
             text: chatInput,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           });
@@ -666,7 +765,6 @@ cat << 'EOF' > ~/mednote/index.html
           const v = document.getElementById("admin-value").value.trim();
           if (k && v) {
             state.dictionary[k] = v;
-            alert(`Dictionary updated: "${k}" now expands to "${v}"`);
             render();
           }
         });
@@ -690,45 +788,22 @@ cat << 'EOF' > ~/mednote/index.html
       document.execCommand("copy");
       document.body.removeChild(textarea);
 
-      const copyBtn = document.getElementById("copy-result-btn");
-      if (copyBtn) {
-        copyBtn.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i><span class="text-emerald-600">Copied!</span>`;
+      const label = document.getElementById("copy-text-label");
+      if (label) {
+        label.innerText = "Copied!";
         setTimeout(() => {
-          copyBtn.innerHTML = `<i class="fa-regular fa-copy"></i><span>Copy Result</span>`;
+          label.innerText = "Copy Result";
         }, 1500);
       }
     }
 
-    function switchTab(t) { state.activeTab = t; render(); }
-    function logout() { state.currentUser = null; render(); }
-    function prevTutorialStep() { if (state.tutorialStep > 0) { state.tutorialStep--; render(); } }
-    function nextTutorialStep() { if (state.tutorialStep < TUTORIAL_STEPS.length - 1) { state.tutorialStep++; render(); } }
-    function finishTutorial() { state.activeTab = 'workspace'; render(); }
+    function logout() {
+      // Clean logout action
+    }
 
-    window.onload = function() { render(); };
+    window.onload = function() {
+      render();
+    };
   </script>
 </body>
 </html>
-EOF
-
-cd ~/mednote && git add index.html && git commit -m "Deploy polished sanitized medical design" && git push origin main --force && vercel --prod --force
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
